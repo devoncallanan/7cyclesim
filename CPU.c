@@ -17,6 +17,16 @@ enum hazard_type {
 	CONT_HAZ
 };
 
+enum pipeline_stage {
+	IF1 = 0,
+	IF2,
+	ID,
+	EX,
+	MEM1,
+	MEM2,
+	WB
+};
+
 int main(int argc, char **argv)
 {
   struct trace_item *tr_entry;
@@ -38,20 +48,28 @@ int main(int argc, char **argv)
    **/
   struct trace_item pipeline[7];
   int pipe_occupancy = 7;
+  int prediction_method = 0;
   unsigned int cycle_number = 0;
   hazard_type stalled, squashed;
   
   int i = 0, j = 0;
 
   if (argc == 1) {
-    fprintf(stdout, "\nUSAGE: tv <trace_file> <switch - any character>\n");
+    fprintf(stdout, "\nUSAGE: tv <trace_file> <switch - any character> <branch prediction method>\n");
     fprintf(stdout, "\n(switch) to turn on or off individual item view.\n\n");
     exit(0);
   }
     
   trace_file_name = argv[1];
-  if (argc == 3) trace_view_on = atoi(argv[2]) ;
-
+  if (argc == 4){
+	  trace_view_on = atoi(argv[2]) ;
+	  prediction_method = atoi(argv[3]);
+  }
+  else if (arc == 3) {
+	  trace_view_on = atoi(argv[2]);
+  }
+  
+  
   fprintf(stdout, "\n ** opening file %s\n", trace_file_name);
 
   trace_fd = fopen(trace_file_name, "rb");
@@ -88,7 +106,7 @@ int main(int argc, char **argv)
     }  
 	
 	/** 
-	 **insert no-ops as needed here
+	 **insert no-ops as needed bellow
 	 **/
 	if (hazard == STRUCT_HAZ) {        /*hazard with writing to the register file*/
 		
@@ -146,10 +164,22 @@ int main(int argc, char **argv)
 	 
 	 
 	 //branch
+     if (pipeline[0]->type == ti_BRANCH) {
+
+	   if (prediction_method == 0) {
+		   
+		   if (pipeline[0]->Addr != tr_entry->PC) {
+			   squashed = CONT_HAZ;
+		   }
+	   }
+	   else if (prediction_method == 1) {
+		   
+	   }
+	   else if (prediction_method == 2) {
+		   
+	   }
 	 
-	 
-	 
-	 
+	 }
 	 
 	 
 	 
@@ -158,6 +188,12 @@ int main(int argc, char **argv)
 // SIMULATION OF A SINGLE CYCLE cpu IS TRIVIAL - EACH INSTRUCTION IS EXECUTED
 // IN ONE CYCLE
 
+    /**
+	--From the assignment (page 3)
+	The project is to replace the simple single cycle simulation with a simulation of the 7-stages pipeline 
+	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
+	in each cycle (if the switch trace_view_on is set to 1). 
+	*/
     if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
       switch(tr_entry->type) {
         case ti_NOP:
