@@ -10,10 +10,17 @@
 #include <arpa/inet.h>
 #include "CPU.h" 
 
+enum hazard_type {
+	NO_HAZ = 0,
+	STRUCT_HAZ,
+	DATA_HAZ,
+	CONT_HAZ
+};
+
 int main(int argc, char **argv)
 {
   struct trace_item *tr_entry;
-  size_t size;
+  size_t size = 0;
   char *trace_file_name;
   int trace_view_on = 0;
   
@@ -23,8 +30,18 @@ int main(int argc, char **argv)
   unsigned char t_dReg= 0;
   unsigned int t_PC = 0;
   unsigned int t_Addr = 0;
-
+  
+  /**Array of trace items that represents the pipeline 
+   **Each index represents a stage:
+   ** 0     1    2    3     4      5     6
+   **IF1 | IF2 | ID | EX | MEM1 | MEM2 | WD
+   **/
+  struct trace_item pipeline[7];
+  int pipe_occupancy = 7;
   unsigned int cycle_number = 0;
+  hazard_type stalled, squashed;
+  
+  int i = 0, j = 0;
 
   if (argc == 1) {
     fprintf(stdout, "\nUSAGE: tv <trace_file> <switch - any character>\n");
@@ -46,14 +63,18 @@ int main(int argc, char **argv)
 
   trace_init();
 
+  size = trace_get_item(&tr_entry);
+
   while(1) {
-    size = trace_get_item(&tr_entry);
    
     if (!size) {       /* no more instructions (trace_items) to simulate */
-      printf("+ Simulation terminates at cycle : %u\n", cycle_number);
-      break;
+	  pipe_occupancy--;
+	  if (pipe_occupancy == 0) {
+        printf("+ Simulation terminates at cycle : %u\n", cycle_number);
+        break;
+	  }
     }
-    else{              /* parse the next instruction to simulate */
+    else if (!stalled && !squashed){              /* parse the next instruction to simulate */
       cycle_number++;
       t_type = tr_entry->type;
       t_sReg_a = tr_entry->sReg_a;
@@ -61,7 +82,78 @@ int main(int argc, char **argv)
       t_dReg = tr_entry->dReg;
       t_PC = tr_entry->PC;
       t_Addr = tr_entry->Addr;
+	  
+	  //get the next trace item so the branch code can check if it should insert squashes or not:
+	  size = trace_get_item(&tr_entry);
     }  
+	
+	/** 
+	 **insert no-ops as needed here
+	 **/
+	if (hazard == STRUCT_HAZ) {        /*hazard with writing to the register file*/
+		
+		
+		
+		
+		
+		
+		
+	}
+	else if (hazard == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
+		
+		
+		
+		
+		
+		
+	}
+	if (squashed == CONT_HAZ) {     /*hazard when branches are incorectly predicted*/
+		
+		
+		
+		
+		
+		
+	}
+	
+	/**
+	 **Check for hazards here. Suggested order is structural hazards then data hazards.
+	 **If there are both, fixing only the data hazard should fix both, so setting it second
+	 **gives it some higher priority.
+	 **Branch is kinda weird because it doesn't stall really so that might end up being its
+	 **own thing.
+	 **/
+	 
+	 //structural
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 //data
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 //branch
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	
 
 // SIMULATION OF A SINGLE CYCLE cpu IS TRIVIAL - EACH INSTRUCTION IS EXECUTED
 // IN ONE CYCLE
