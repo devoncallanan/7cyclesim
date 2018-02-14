@@ -36,7 +36,10 @@ int main(int argc, char **argv)
   
   //constant noop that can be used to insert when stalling
   const struct trace_item *noop;
-  noop->type = NOP;
+  noop->type = ti_NOP;
+  noop->sReg_a = 255;
+  noop->sReg_b = 255;
+  noop->dReg = 255;
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -50,11 +53,12 @@ int main(int argc, char **argv)
    ** 0     1    2    3     4      5     6
    **IF1 | IF2 | ID | EX | MEM1 | MEM2 | WB
    **/
-  struct trace_item pipeline[7];
+  struct trace_item* pipeline[7];
   int pipe_occupancy = 7;
   int prediction_method = 0;
   unsigned int cycle_number = 0;
   hazard_type stalled, squashed;
+  int num_squash = 0;
   
   int i = 0, j = 0;
 
@@ -125,10 +129,14 @@ int main(int argc, char **argv)
 	 
 	 //check if the WB stage is writing to the register file: i.e. is an RType, IType, or Load instruction
 	 //also check if the ID stage is reading from the register file: i.e. is an RType, Load, Store, Branch, JRType, or IType (as long as sReg_a is used) instruction
-	 if ((tempWB == RTYPE) || (tempWB == ITYPE) || (tempWB == LOAD))	
-		 if((tempID == RTYPE) || ((tempID == ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == LOAD) 
-		   || (tempID == STORE) || (tempID == BRANCH) || (tempID == JRTYPE))
+	 if ((tempWB == ti_RTYPE) || (tempWB == ti_ITYPE) || (tempWB == ti_LOAD))	
+	 {
+		 if((tempID == ti_RTYPE) || ((tempID == ti_ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == ti_LOAD) 
+		   || (tempID == ti_STORE) || (tempID == ti_BRANCH) || (tempID == ti_JRTYPE))
 			 stalled = STRUCT_HAZ;
+	 }
+	 else
+		 stalled = NO_HAZ;
 	 
 	 
 	 //data
@@ -146,6 +154,7 @@ int main(int argc, char **argv)
 		   
 		   if (pipeline[0]->Addr != tr_entry->PC) {
 			   squashed = CONT_HAZ;
+			   num_squash = 3;
 		   }
 	   }
 	   else if (prediction_method == 1) {
@@ -225,17 +234,19 @@ int main(int argc, char **argv)
 			
 			
 		}
-		if (squashed == CONT_HAZ) {     /*hazard when branches are incorrectly predicted*/
-			
-			pipeline[0] = noop;
-			pipeline[1] = noop;
-			pipeline[2] = noop;
-			break;
-		}
+
 		pipeline[i] = pipeline[i - 1];
 	}
+	if(squashed == CONT_HAZ) {	/*hazard when branches are incorrectly predicted*/
+		pipeline[0] = noop;
+		num_squash--;
+		if(num_squash == 0)
+			squashed = NO_HAZ;
+	}
+	else if(!stalled) {
+		pipeline[0] = tr_entry;
+	}
 	
-	pipeline[0] = tr_entry;
   }
 
   trace_uninit();
