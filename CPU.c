@@ -34,6 +34,10 @@ int main(int argc, char **argv)
   char *trace_file_name;
   int trace_view_on = 0;
   
+  //constant noop that can be used to insert when stalling
+  const struct trace_item *noop;
+  noop->type = NOP;
+  
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
   unsigned char t_sReg_b= 0;
@@ -44,7 +48,7 @@ int main(int argc, char **argv)
   /**Array of trace items that represents the pipeline 
    **Each index represents a stage:
    ** 0     1    2    3     4      5     6
-   **IF1 | IF2 | ID | EX | MEM1 | MEM2 | WD
+   **IF1 | IF2 | ID | EX | MEM1 | MEM2 | WB
    **/
   struct trace_item pipeline[7];
   int pipe_occupancy = 7;
@@ -105,34 +109,7 @@ int main(int argc, char **argv)
 	  size = trace_get_item(&tr_entry);
     }  
 	
-	/** 
-	 **insert no-ops as needed below
-	 **/
-	if (hazard == STRUCT_HAZ) {        /*hazard with writing to the register file*/
-		
-		
-		
-		
-		
-		
-		
-	}
-	else if (hazard == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
-		
-		
-		
-		
-		
-		
-	}
-	if (squashed == CONT_HAZ) {     /*hazard when branches are incorrectly predicted*/
-		
-		
-		
-		
-		
-		
-	}
+	
 	
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -143,19 +120,18 @@ int main(int argc, char **argv)
 	 **/
 	 
 	 //structural
+	 unsigned char tempWB = pipeline[6]->type;
+	 unsigned char tempID = pipeline[1]->type;
 	 
-	
-	 
-	 
-	 
-	 
-	 
+	 //check if the WB stage is writing to the register file: i.e. is an RType, IType, or Load instruction
+	 //also check if the ID stage is reading from the register file: i.e. is an RType, Load, Store, Branch, JRType, or IType (as long as sReg_a is used) instruction
+	 if ((tempWB == RTYPE) || (tempWB == ITYPE) || (tempWB == LOAD))	
+		 if((tempID == RTYPE) || ((tempID == ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == LOAD) 
+		   || (tempID == STORE) || (tempID == BRANCH) || (tempID == JRTYPE))
+			 stalled = STRUCT_HAZ;
 	 
 	 
 	 //data
-	 
-	 
-	 
 	 
 	 
 	 
@@ -201,7 +177,7 @@ int main(int argc, char **argv)
           break;
         case ti_RTYPE:
           printf("[cycle %d] RTYPE:",cycle_number) ;
-          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipelin3[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
           break;
         case ti_ITYPE:
           printf("[cycle %d] ITYPE:",cycle_number) ;
@@ -232,6 +208,34 @@ int main(int argc, char **argv)
           break;
       }
     }
+	
+	
+	//Pipeline advancing loop
+	int i;
+	for (i = 6; i >= 1; i = i - 1)
+	{
+		/** 
+		 **insert no-ops as needed below
+		 **/
+		if ((i == 3) && (stalled == STRUCT_HAZ)) {        /*hazard with writing to the register file*/
+			pipeline[3] = noop;
+			break;
+		}
+		else if (stalled == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
+			
+			
+		}
+		if (squashed == CONT_HAZ) {     /*hazard when branches are incorrectly predicted*/
+			
+			pipeline[0] = noop;
+			pipeline[1] = noop;
+			pipeline[2] = noop;
+			break;
+		}
+		pipeline[i] = pipeline[i - 1];
+	}
+	
+	pipeline[0] = tr_entry;
   }
 
   trace_uninit();
