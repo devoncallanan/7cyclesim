@@ -35,7 +35,7 @@ int main(int argc, char **argv)
   int trace_view_on = 0;
   
   //constant noop that can be used to insert when stalling
-  const struct trace_item *noop = { ->type = ti_NOP, ->sReg_a = 255, ->sReg_b = 255, ->dReg = 255, ->addr = 0, ->PC = 0};
+  const struct trace_item noop = {.type = ti_NOP, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .addr = 0, .PC = 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 		 **insert no-ops as needed below
 		 **/
 		if ((i == 3) && (stalled == STRUCT_HAZ)) {        /*hazard with writing to the register file*/
-			pipeline[3] = noop;
+			pipeline[3] = &noop;
 			break;
 		}
 		else if (stalled == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 		pipeline[i] = pipeline[i - 1];
 	}
 	if(squashed == CONT_HAZ) {	/*hazard when branches are incorrectly predicted*/
-		pipeline[0] = noop;
+		pipeline[0] = &noop;
 		num_squash--;
 		if(num_squash == 0)
 			squashed = NO_HAZ;
