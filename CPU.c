@@ -35,11 +35,7 @@ int main(int argc, char **argv)
   int trace_view_on = 0;
   
   //constant noop that can be used to insert when stalling
-  const struct trace_item *noop;
-  noop->type = ti_NOP;
-  noop->sReg_a = 255;
-  noop->sReg_b = 255;
-  noop->dReg = 255;
+  const struct trace_item *noop = {ti_NOP, 255, 255, 255, 0, 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -57,7 +53,7 @@ int main(int argc, char **argv)
   int pipe_occupancy = 7;
   int prediction_method = 0;
   unsigned int cycle_number = 0;
-  hazard_type stalled, squashed;
+  int stalled, squashed;
   int num_squash = 0;
   
   int i = 0, j = 0;
@@ -73,7 +69,7 @@ int main(int argc, char **argv)
 	  trace_view_on = atoi(argv[2]) ;
 	  prediction_method = atoi(argv[3]);
   }
-  else if (arc == 3) {
+  else if (argc == 3) {
 	  trace_view_on = atoi(argv[2]);
   }
   
@@ -132,11 +128,15 @@ int main(int argc, char **argv)
 	 if ((tempWB == ti_RTYPE) || (tempWB == ti_ITYPE) || (tempWB == ti_LOAD))	
 	 {
 		 if((tempID == ti_RTYPE) || ((tempID == ti_ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == ti_LOAD) 
-		   || (tempID == ti_STORE) || (tempID == ti_BRANCH) || (tempID == ti_JRTYPE))
-			 stalled = STRUCT_HAZ;
+		   || (tempID == ti_STORE) || (tempID == ti_BRANCH) || (tempID == ti_JRTYPE)) 
+			{
+			 stalled = STRUCT_HAZ
+			}
 	 }
 	 else
-		 stalled = NO_HAZ;
+	 {
+		 stalled = NO_HAZ
+	 }
 	 
 	 
 	 //data
