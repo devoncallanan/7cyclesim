@@ -35,7 +35,7 @@ int main(int argc, char **argv)
   int trace_view_on = 0;
   
   //constant noop that can be used to insert when stalling
-  const struct trace_item *noop = {ti_NOP, 255, 255, 255, 0, 0};
+  const struct trace_item *noop = {.type = ti_NOP, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .addr = 0, .PC = 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -130,12 +130,12 @@ int main(int argc, char **argv)
 		 if((tempID == ti_RTYPE) || ((tempID == ti_ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == ti_LOAD) 
 		   || (tempID == ti_STORE) || (tempID == ti_BRANCH) || (tempID == ti_JRTYPE)) 
 			{
-			 stalled = STRUCT_HAZ
+			 stalled = STRUCT_HAZ;
 			}
 	 }
 	 else
 	 {
-		 stalled = NO_HAZ
+		 stalled = NO_HAZ;
 	 }
 	 
 	 
