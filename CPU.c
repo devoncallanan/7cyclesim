@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
 	   int branch_taken = pipeline[0]->Addr == tr_entry->PC;
-
+	   char index = (char)(pipeline[0]->Addr << 3);
 	   if (prediction_method == 0) {
 		   
 		   if (pipeline[0]->Addr != tr_entry->PC) {
@@ -160,8 +160,7 @@ int main(int argc, char **argv)
 		   }
 	   }
 	   else if (prediction_method == 1) {
-		   char index = (char)(pipeline[0]->Addr << 3);
-		   if (bp_hash_table[index][0] == pipeline[0]) {
+		   if (bp_hash_table[index][0] == pipeline[0]->Addr) {
 			   if (branch_taken != bp_hash_table[index][1]) {
 				   squashed = CONT_HAZ;
 				   num_squash = 3;
