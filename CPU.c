@@ -55,6 +55,7 @@ int main(int argc, char **argv)
   unsigned int cycle_number = 0;
   int stalled, squashed;
   int num_squash = 0;
+  char bp_hash_table[128][2];
   
   int i = 0, j = 0;
 
@@ -149,6 +150,7 @@ int main(int argc, char **argv)
 	 
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
+	   int branch_taken = pipeline[0]->Addr == tr_entry->PC;
 
 	   if (prediction_method == 0) {
 		   
@@ -158,7 +160,21 @@ int main(int argc, char **argv)
 		   }
 	   }
 	   else if (prediction_method == 1) {
-		   
+		   char index = (char)(pipeline[0]->Addr << 3);
+		   if (bp_hash_table[index][0] == pipeline[0]) {
+			   if (branch_taken != bp_hash_table[index][1]) {
+				   squashed = CONT_HAZ;
+				   num_squash = 3;
+			   }
+	       }
+		   else {
+			   bp_hash_table[index][0] = pipeline[0]->Addr;
+			   bp_hash_table[index][1] = branch_taken;
+			   if (!branch_taken) {
+				   squashed = CONT_HAZ;
+				   num_squash = 3;				   
+			   }
+		   }
 	   }
 	   else if (prediction_method == 2) {
 		   
