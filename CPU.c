@@ -154,7 +154,7 @@ int main(int argc, char **argv)
 	   char index = (char)(pipeline[0]->Addr << 3);
 	   if (prediction_method == 0) {
 		   
-		   if (pipeline[0]->Addr != tr_entry->PC) {
+		   if (pipeline[0]->Addr == tr_entry->PC) {
 			   squashed = CONT_HAZ;
 			   num_squash = 3;
 		   }
@@ -169,14 +169,53 @@ int main(int argc, char **argv)
 		   else {
 			   bp_hash_table[index][0] = pipeline[0]->Addr;
 			   bp_hash_table[index][1] = branch_taken;
-			   if (!branch_taken) {
+			   if (branch_taken) {
 				   squashed = CONT_HAZ;
 				   num_squash = 3;				   
 			   }
 		   }
 	   }
 	   else if (prediction_method == 2) {
-		   
+		   if (bp_hash_table[index][0] == pipelin[0]->Addr) {
+			   if (bp_hash_table[index][1] == 0) {
+				   if (branch_taken) {
+					   bp_hash_table[index][1] = 1;
+					   squashed = CONT_HAZ;
+					   num_squash = 3;
+				   }
+				}
+				else if (bp_hash_table[index][1] == 1) {
+					if (branch_taken) {
+						bp_hash_table[index][1] = 3;
+						squashed = CONT_HAZ;
+						num_squash = 3;
+					}
+					else  bp_hash_table[index][1] = 0;
+				}
+				else if (bp_hash_table[index][1] == 2) {
+					if (!branch_taken) {
+						bp_hash_table[index][1] = 0;
+						squashed = CONT_HAZ;
+						num_squash = 3;
+					}
+					else bp_hash_table[index][1] = 3;
+				}
+				else if (bp_hash_table[index][1] == 3) {
+					if (!branch_taken) {
+						bp_hash_table[index][1] = 2;
+						squashed = CONT_HAZ;
+						num_squash = 3;
+					}
+				}
+		   }
+		   else {
+			   bp_hash_table[index][0] = pipeline[0]->Addr;
+			   bp_hash_table[index][1] = branch_taken*3;
+			   if (branch_taken) {
+				   squashed = CONT_HAZ;
+				   num_squash = 3;				   
+			   }			   
+		   }
 	   }
 	 
 	 }
