@@ -35,7 +35,7 @@ int main(int argc, char **argv)
   int trace_view_on = 0;
   
   //constant noop that can be used to insert when stalling
-  const struct trace_item *noop = {.type = ti_NOP, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .addr = 0, .PC = 0};
+  const struct trace_item *noop = { ->type = ti_NOP, ->sReg_a = 255, ->sReg_b = 255, ->dReg = 255, ->addr = 0, ->PC = 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
