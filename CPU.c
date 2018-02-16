@@ -97,10 +97,9 @@ int main(int argc, char **argv)
 
   trace_init();
 
-  size = trace_get_item(&tr_entry);
+  size = 1;
   
 
-  int notfirst = 0;
   while(1) {
 	
     if (!size) {       /* no more instructions (trace_items) to simulate */
@@ -111,21 +110,9 @@ int main(int argc, char **argv)
 	  }
     }
     else if (stalled == NO_HAZ && squashed == NO_HAZ){              /* parse the next instruction to simulate */
-      
-      t_type = tr_entry->type;
-      t_sReg_a = tr_entry->sReg_a;
-      t_sReg_b = tr_entry->sReg_b;
-      t_dReg = tr_entry->dReg;
-      t_PC = tr_entry->PC;
-      t_Addr = tr_entry->Addr;
-	  
-	  //#################################
-	  //get the next trace item so the branch code can check if it should insert squashes or not:
-	  if (notfirst == 1) {
+
 		size = trace_get_item(&tr_entry);
-	  }
-	  //##################################
-	  
+
     } 
 	cycle_number++;	
 	if(num_squash == 0)
@@ -178,7 +165,8 @@ int main(int argc, char **argv)
 			 }
 		 }
 		 
-	 } else {
+	 } 
+	 else {
 		 stalled = NO_HAZ;
 	 }
 	 
@@ -269,7 +257,9 @@ int main(int argc, char **argv)
 	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
 	in each cycle (if the switch trace_view_on is set to 1). 
 	*/
-    if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
+    //if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
+
+	/**
       switch(pipeline[6]->type) {
         case ti_NOP:
           printf("[cycle %d] NOP\n",cycle_number) ;
@@ -309,11 +299,54 @@ int main(int argc, char **argv)
           printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
           break;
       }
-    }
+	  **/
+    //}
 	
+	//print pipeline, DEBUGGING	
+	printf("[cycle %d] ",cycle_number) ;	
+	for (j = 0; j <= 6; j++)
+	{
+		switch(pipeline[6]->type) {
+        case ti_NOP:
+          printf("NOP\n") ;
+          break;
+		case ti_SQUASHED:
+          printf("SQUASHED\n") ;
+          break;
+        case ti_RTYPE:
+          printf("RTYPE:") ;
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
+          break;
+        case ti_ITYPE:
+          printf("ITYPE:") ;
+          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->dReg, pipeline[6]->Addr);
+          break;
+        case ti_LOAD:
+          printf("LOAD:") ;      
+          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->dReg, pipeline[6]->Addr);
+          break;
+        case ti_STORE:
+          printf("STORE:") ;      
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->Addr);
+          break;
+        case ti_BRANCH:
+          printf("BRANCH:") ;
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->Addr);
+          break;
+        case ti_JTYPE:
+          printf("JTYPE:") ;
+          printf(" (PC: %x)(addr: %x)\n", pipeline[6]->PC,pipeline[6]->Addr);
+          break;
+        case ti_SPECIAL:
+          printf("SPECIAL:\n") ;      	
+          break;
+        case ti_JRTYPE:
+          printf("JRTYPE:") ;
+          printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
+          break;
+	}
 	
 	//Pipeline advancing loop
-	int i;
 	for (i = 6; i >= 1; i = i - 1)
 	{
 		/** 
@@ -344,8 +377,6 @@ int main(int argc, char **argv)
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
-	
-	notfirst = 1;
   }
 
   trace_uninit();
