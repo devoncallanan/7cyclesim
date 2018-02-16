@@ -50,10 +50,20 @@ int main(int argc, char **argv)
    **IF1 | IF2 | ID | EX | MEM1 | MEM2 | WB
    **/
   struct trace_item* pipeline[7];
+  //Changed by jen ####################################################################
+  pipeline[0] = &noop;
+  pipeline[1] = &noop;
+  pipeline[2] = &noop;
+  pipeline[3] = &noop;
+  pipeline[4] = &noop;
+  pipeline[5] = &noop;
+  pipeline[6] = &noop;
+  // ####################################################################
+  
   int pipe_occupancy = 7;
   int prediction_method = 0;
   unsigned int cycle_number = 0;
-  int stalled, squashed;
+  int stalled, squashed = NO_HAZ;
   int num_squash = 0;
   char bp_hash_table[128][2];
   
@@ -87,9 +97,11 @@ int main(int argc, char **argv)
   trace_init();
 
   size = trace_get_item(&tr_entry);
+  
 
+  int notfirst = 0;
   while(1) {
-   
+	
     if (!size) {       /* no more instructions (trace_items) to simulate */
 	  pipe_occupancy--;
 	  if (pipe_occupancy == 0) {
@@ -97,8 +109,8 @@ int main(int argc, char **argv)
         break;
 	  }
     }
-    else if (!stalled && !squashed){              /* parse the next instruction to simulate */
-      cycle_number++;
+    else if (stalled == NO_HAZ && squashed == NO_HAZ){              /* parse the next instruction to simulate */
+      
       t_type = tr_entry->type;
       t_sReg_a = tr_entry->sReg_a;
       t_sReg_b = tr_entry->sReg_b;
@@ -106,11 +118,15 @@ int main(int argc, char **argv)
       t_PC = tr_entry->PC;
       t_Addr = tr_entry->Addr;
 	  
+	  //#################################
 	  //get the next trace item so the branch code can check if it should insert squashes or not:
-	  size = trace_get_item(&tr_entry);
-    }  
-	
-	
+	  if (notfirst == 1) {
+		size = trace_get_item(&tr_entry);
+	  }
+	  //##################################
+	  
+    } 
+	cycle_number++;	
 	
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -238,8 +254,7 @@ int main(int argc, char **argv)
 	 
 	 }
 	 
-	 
-	 
+
 	
 
 // SIMULATION OF A SINGLE CYCLE cpu IS TRIVIAL - EACH INSTRUCTION IS EXECUTED
@@ -254,7 +269,7 @@ int main(int argc, char **argv)
     if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
       switch(pipeline[6]->type) {
         case ti_NOP:
-          printf("[cycle %d] NOP\n:",cycle_number) ;
+          printf("[cycle %d] NOP\n",cycle_number) ;
           break;
         case ti_RTYPE:
           printf("[cycle %d] RTYPE:",cycle_number) ;
@@ -305,10 +320,13 @@ int main(int argc, char **argv)
 		else if (stalled == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
 			if (data_haz_type == 0) {
 				pipeline[3] = &noop;
-			} else if (data_haz_type == 1) {
+			} 	
+		}
+		
+		if ((i==4) && (stalled == DATA_HAZ)) {	/*hazard when instruction expects data that is still being loaded*/
+			if (data_haz_type == 1) {
 				pipeline[4] = &noop;
 			}
-			
 		}
 
 		pipeline[i] = pipeline[i - 1];
@@ -323,6 +341,7 @@ int main(int argc, char **argv)
 		pipeline[0] = tr_entry;
 	}
 	
+	notfirst = 1;
   }
 
   trace_uninit();
