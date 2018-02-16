@@ -140,12 +140,30 @@ int main(int argc, char **argv)
 	 }
 	 
 	 
+	 int data_haz_type;
 	 //data
+	 if (pipeline[3]->type == ti_LOAD) {
+		 
+		 if (pipeline[2]->type == ti_RTYPE || pipeline[2]->type == ti_STORE || pipeline[2]->type == ti_BRANCH) {
+			 
+			 if ((pipeline[3]->dReg == pipeline[2]->sReg_a) || (pipeline[3]->dReg == pipeline[2]->sReg_b)) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 0;
+			 }
+			 
+		 } else if (pipeline[2]->type == ti_ITYPE || pipeline[2]->type == ti_LOAD || pipeline[2]->type == ti_JRTYPE) {
+			 
+			 if (pipeline[3]->dReg == pipeline[2]->sReg_a) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 1;
+			 }
+		 }
+		 
+	 } else {
+		 stalled = NO_HAZ;
+	 }
 	 
-	 
-	 
-	 
-	 
+
 	 
 	 
 	 //branch
