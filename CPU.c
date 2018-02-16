@@ -104,6 +104,7 @@ int main(int argc, char **argv)
 	
     if (!size) {       /* no more instructions (trace_items) to simulate */
 	  pipe_occupancy--;
+	  tr_entry = &noop;
 	  if (pipe_occupancy == 0) {
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
         break;
@@ -164,16 +165,28 @@ int main(int argc, char **argv)
 				 stalled = DATA_HAZ;
 				 data_haz_type = 0;
 			 }
-		 } else {
-			//stalled = NO_HAZ;
-		 }
-		 
+		 } 
 		 
 	 } 
-	 else {
-		 //stalled = NO_HAZ;
-	 }
-	 //printf("%d", data_haz_type);
+	 
+	 if (pipeline[4]->type == ti_LOAD) {
+
+		 if (pipeline[2]->type == ti_RTYPE || pipeline[2]->type == ti_STORE || pipeline[2]->type == ti_BRANCH) {
+			 
+			 if ((pipeline[3]->dReg == pipeline[2]->sReg_a) || (pipeline[3]->dReg == pipeline[2]->sReg_b)) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 1;
+			 }
+			 
+		 } else if (pipeline[2]->type == ti_ITYPE || pipeline[2]->type == ti_LOAD || pipeline[2]->type == ti_JRTYPE) {
+			 
+			 if (pipeline[3]->dReg == pipeline[2]->sReg_a) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 1;
+			 }
+		 } 
+		 
+	 } 
 
 	 
 	 //branch
@@ -386,7 +399,7 @@ int main(int argc, char **argv)
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
-	printf("Num_squash = %d , stalled = %d", num_squash, stalled);
+	//printf("Num_squash = %d , stalled = %d", num_squash, stalled);
   }
 
   trace_uninit();
