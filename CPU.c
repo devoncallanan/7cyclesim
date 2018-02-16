@@ -303,7 +303,11 @@ int main(int argc, char **argv)
 			break;
 		}
 		else if (stalled == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
-			
+			if (data_haz_type == 0) {
+				pipeline[3] = &noop;
+			} else if (data_haz_type == 1) {
+				pipeline[4] = &noop;
+			}
 			
 		}
 
