@@ -344,6 +344,7 @@ int main(int argc, char **argv)
           printf("JRTYPE:") ;
           printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
           break;
+		}
 	}
 	
 	//Pipeline advancing loop
