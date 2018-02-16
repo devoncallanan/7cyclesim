@@ -1,13 +1,11 @@
 
-#include <stdlib.h>
-
 #ifndef TRACE_ITEM_H
 #define TRACE_ITEM_H
 
 // this is tpts
 enum trace_item_type {
 	ti_NOP = 0,
-
+	ti_SQUASHED,
 	ti_RTYPE,
 	ti_ITYPE,
 	ti_LOAD,
@@ -111,5 +109,3 @@ int write_trace(struct trace_item item, char *fname)
 		
 	return 1;
 }
-
-

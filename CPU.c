@@ -36,6 +36,7 @@ int main(int argc, char **argv)
   
   //constant noop that can be used to insert when stalling
   struct trace_item noop = {.type = ti_NOP, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .PC = 0, .Addr = 0};
+  struct trace_item squash = {.type = ti_SQUASHED, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .PC = 0, .Addr = 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -127,6 +128,8 @@ int main(int argc, char **argv)
 	  
     } 
 	cycle_number++;	
+	if(num_squash == 0)
+			squashed = NO_HAZ;
 	
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -271,6 +274,9 @@ int main(int argc, char **argv)
         case ti_NOP:
           printf("[cycle %d] NOP\n",cycle_number) ;
           break;
+		case ti_SQUASHED:
+          printf("[cycle %d] SQUASHED\n",cycle_number) ;
+          break;
         case ti_RTYPE:
           printf("[cycle %d] RTYPE:",cycle_number) ;
           printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
@@ -332,10 +338,8 @@ int main(int argc, char **argv)
 		pipeline[i] = pipeline[i - 1];
 	}
 	if(squashed == CONT_HAZ) {	/*hazard when branches are incorrectly predicted*/
-		pipeline[0] = &noop;
+		pipeline[0] = &squash;
 		num_squash--;
-		if(num_squash == 0)
-			squashed = NO_HAZ;
 	}
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
