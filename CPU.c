@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
 	in each cycle (if the switch trace_view_on is set to 1). 
 	*/
-    //if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
+    if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
 
 	
       switch(pipeline[6]->type) {
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
           break;
       }
 	  
-    //}
+    }
 	
 	/**
 	//print pipeline, DEBUGGING	
