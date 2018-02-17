@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 	 }
 	 
 	 
-	 int data_haz_type;
+	 int data_haz_type = 0;
 	 //data
 	 if (pipeline[3]->type == ti_LOAD) {
 
@@ -276,14 +276,14 @@ int main(int argc, char **argv)
 	*/
     //if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
 
-	/**
+	
       switch(pipeline[6]->type) {
         case ti_NOP:
           printf("[cycle %d] NOP\n",cycle_number) ;
           break;
-		case ti_SQUASHED:
-          printf("[cycle %d] SQUASHED\n",cycle_number) ;
-          break;
+		//case ti_SQUASHED:
+          //printf("[cycle %d] SQUASHED\n",cycle_number) ;
+          //break;
         case ti_RTYPE:
           printf("[cycle %d] RTYPE:",cycle_number) ;
           printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
@@ -316,9 +316,10 @@ int main(int argc, char **argv)
           printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
           break;
       }
-	  **/
+	  
     //}
 	
+	/**
 	//print pipeline, DEBUGGING	
 	printf("\n[cycle %d]\n ",cycle_number) ;	
 	for (j = 0; j <= 6; j++)
@@ -327,9 +328,6 @@ int main(int argc, char **argv)
         case ti_NOP:
           printf("NOP\n") ;
           break;
-		//case ti_SQUASHED:
-		  //printf("SQUASHED\n") ;
-          //break;
         case ti_RTYPE:
           printf("RTYPE:") ;
           printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->sReg_b, pipeline[j]->dReg);
@@ -363,7 +361,7 @@ int main(int argc, char **argv)
           break;
 		}
 	}
-	
+	**/
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
 	{
@@ -399,7 +397,7 @@ int main(int argc, char **argv)
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
-	//printf("Num_squash = %d , stalled = %d", num_squash, stalled);
+
   }
 
   trace_uninit();
