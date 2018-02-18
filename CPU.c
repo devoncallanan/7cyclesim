@@ -66,7 +66,7 @@ int main(int argc, char **argv)
   unsigned int cycle_number = 0;
   int stalled = NO_HAZ, squashed = NO_HAZ;
   int num_squash = 0;
-  char bp_hash_table[128][2];
+  unsigned int bp_hash_table[128][2];
   
   int i = 0, j = 0;
 
@@ -78,11 +78,11 @@ int main(int argc, char **argv)
     
   trace_file_name = argv[1];
   if (argc == 4){
-	  trace_view_on = atoi(argv[2]) ;
-	  prediction_method = atoi(argv[3]);
+	  trace_view_on = atoi(argv[3]) ;
+	  prediction_method = atoi(argv[2]);
   }
   else if (argc == 3) {
-	  trace_view_on = atoi(argv[2]);
+	  prediction_method = atoi(argv[2]);
   }
   
   
@@ -188,11 +188,11 @@ int main(int argc, char **argv)
 		 
 	 } 
 
-	 
+	 //printf("cont hazard %d", squashed);
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
 	   int branch_taken = pipeline[0]->Addr == tr_entry->PC;
-	   char index = (char)(pipeline[0]->Addr >> 3);
+	   char index = (pipeline[0]->Addr << 24 )>> 26;
 	   if (prediction_method == 0) {
 		   
 		   if (pipeline[0]->Addr == tr_entry->PC) {
@@ -201,10 +201,12 @@ int main(int argc, char **argv)
 		   }
 	   }
 	   else if (prediction_method == 1) {
-		   if (bp_hash_table[index][0] == pipeline[0]->Addr) {
+		   if (bp_hash_table[index][0] - pipeline[0]->Addr == 0) {
 			   if (branch_taken != bp_hash_table[index][1]) {
 				   squashed = CONT_HAZ;
 				   num_squash = 3;
+				   bp_hash_table[index][1] = branch_taken;
+				   //printf("branchhaz 1.0");
 			   }
 	       }
 		   else {
@@ -212,7 +214,8 @@ int main(int argc, char **argv)
 			   bp_hash_table[index][1] = branch_taken;
 			   if (branch_taken) {
 				   squashed = CONT_HAZ;
-				   num_squash = 3;				   
+				   num_squash = 3;			
+				   //printf("branchhaz 1.1");	   
 			   }
 		   }
 		   
@@ -261,7 +264,8 @@ int main(int argc, char **argv)
 	   }
 	 
 	 }
-	 
+	 	 //printf("cont hazard %d", squashed);
+
 
 	
 
@@ -318,6 +322,8 @@ int main(int argc, char **argv)
       }
 	  
     }
+    
+    //printf("\n haz on last inst: %d", stalled);
 	
 	/**
 	//print pipeline, DEBUGGING	
