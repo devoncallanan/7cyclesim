@@ -5,7 +5,7 @@
 // this is tpts
 enum trace_item_type {
 	ti_NOP = 0,
-	ti_SQUASHED,
+
 	ti_RTYPE,
 	ti_ITYPE,
 	ti_LOAD,
@@ -14,6 +14,7 @@ enum trace_item_type {
 	ti_JTYPE,
 	ti_SPECIAL,
 	ti_JRTYPE
+	
 };
 
 struct trace_item {
