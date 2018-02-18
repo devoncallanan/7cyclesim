@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   
   //constant noop that can be used to insert when stalling
   struct trace_item noop = {.type = ti_NOP, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .PC = 0, .Addr = 0};
-  struct trace_item squash = {.type = ti_SQUASHED, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .PC = 0, .Addr = 0};
+  //struct trace_item squash = {.type = ti_SQUASHED, .sReg_a = 255, .sReg_b = 255, .dReg = 255, .PC = 0, .Addr = 0};
   
   unsigned char t_type = 0;
   unsigned char t_sReg_a= 0;
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
   int pipe_occupancy = 7;
   int prediction_method = 0;
   unsigned int cycle_number = 0;
-  int stalled, squashed = NO_HAZ;
+  int stalled = NO_HAZ, squashed = NO_HAZ;
   int num_squash = 0;
   char bp_hash_table[128][2];
   
@@ -104,6 +104,7 @@ int main(int argc, char **argv)
 	
     if (!size) {       /* no more instructions (trace_items) to simulate */
 	  pipe_occupancy--;
+	  tr_entry = &noop;
 	  if (pipe_occupancy == 0) {
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
         break;
@@ -117,6 +118,7 @@ int main(int argc, char **argv)
 	cycle_number++;	
 	if(num_squash == 0)
 			squashed = NO_HAZ;
+	stalled = NO_HAZ;
 	
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -142,14 +144,14 @@ int main(int argc, char **argv)
 	 }
 	 else
 	 {
-		 stalled = NO_HAZ;
+		 //stalled = NO_HAZ;
 	 }
 	 
 	 
-	 int data_haz_type;
+	 int data_haz_type = 0;
 	 //data
 	 if (pipeline[3]->type == ti_LOAD) {
-		 
+
 		 if (pipeline[2]->type == ti_RTYPE || pipeline[2]->type == ti_STORE || pipeline[2]->type == ti_BRANCH) {
 			 
 			 if ((pipeline[3]->dReg == pipeline[2]->sReg_a) || (pipeline[3]->dReg == pipeline[2]->sReg_b)) {
@@ -161,22 +163,36 @@ int main(int argc, char **argv)
 			 
 			 if (pipeline[3]->dReg == pipeline[2]->sReg_a) {
 				 stalled = DATA_HAZ;
-				 data_haz_type = 1;
+				 data_haz_type = 0;
 			 }
-		 }
+		 } 
 		 
 	 } 
-	 else {
-		 stalled = NO_HAZ;
-	 }
 	 
+	 if (pipeline[4]->type == ti_LOAD) {
 
-	 
+		 if (pipeline[2]->type == ti_RTYPE || pipeline[2]->type == ti_STORE || pipeline[2]->type == ti_BRANCH) {
+			 
+			 if ((pipeline[3]->dReg == pipeline[2]->sReg_a) || (pipeline[3]->dReg == pipeline[2]->sReg_b)) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 1;
+			 }
+			 
+		 } else if (pipeline[2]->type == ti_ITYPE || pipeline[2]->type == ti_LOAD || pipeline[2]->type == ti_JRTYPE) {
+			 
+			 if (pipeline[3]->dReg == pipeline[2]->sReg_a) {
+				 stalled = DATA_HAZ;
+				 data_haz_type = 1;
+			 }
+		 } 
+		 
+	 } 
+
 	 
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
 	   int branch_taken = pipeline[0]->Addr == tr_entry->PC;
-	   char index = (char)(pipeline[0]->Addr << 3);
+	   char index = (char)(pipeline[0]->Addr >> 3);
 	   if (prediction_method == 0) {
 		   
 		   if (pipeline[0]->Addr == tr_entry->PC) {
@@ -199,6 +215,7 @@ int main(int argc, char **argv)
 				   num_squash = 3;				   
 			   }
 		   }
+		   
 	   }
 	   else if (prediction_method == 2) {
 		   if (bp_hash_table[index][0] == pipeline[0]->Addr) {
@@ -257,16 +274,16 @@ int main(int argc, char **argv)
 	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
 	in each cycle (if the switch trace_view_on is set to 1). 
 	*/
-    //if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
+    if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */
 
-	/**
+	
       switch(pipeline[6]->type) {
         case ti_NOP:
           printf("[cycle %d] NOP\n",cycle_number) ;
           break;
-		case ti_SQUASHED:
-          printf("[cycle %d] SQUASHED\n",cycle_number) ;
-          break;
+		//case ti_SQUASHED:
+          //printf("[cycle %d] SQUASHED\n",cycle_number) ;
+          //break;
         case ti_RTYPE:
           printf("[cycle %d] RTYPE:",cycle_number) ;
           printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
@@ -299,85 +316,88 @@ int main(int argc, char **argv)
           printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
           break;
       }
-	  **/
-    //}
+	  
+    }
 	
+	/**
 	//print pipeline, DEBUGGING	
-	printf("[cycle %d] ",cycle_number) ;	
+	printf("\n[cycle %d]\n ",cycle_number) ;	
 	for (j = 0; j <= 6; j++)
 	{
-		switch(pipeline[6]->type) {
+		switch(pipeline[j]->type) {
         case ti_NOP:
           printf("NOP\n") ;
           break;
-		case ti_SQUASHED:
-          printf("SQUASHED\n") ;
-          break;
         case ti_RTYPE:
           printf("RTYPE:") ;
-          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->sReg_b, pipeline[j]->dReg);
           break;
         case ti_ITYPE:
           printf("ITYPE:") ;
-          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->dReg, pipeline[6]->Addr);
+          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->dReg, pipeline[j]->Addr);
           break;
         case ti_LOAD:
           printf("LOAD:") ;      
-          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->dReg, pipeline[6]->Addr);
+          printf(" (PC: %x)(sReg_a: %d)(dReg: %d)(addr: %x)\n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->dReg, pipeline[j]->Addr);
           break;
         case ti_STORE:
           printf("STORE:") ;      
-          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->Addr);
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->sReg_b, pipeline[j]->Addr);
           break;
         case ti_BRANCH:
           printf("BRANCH:") ;
-          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->Addr);
+          printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(addr: %x)\n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->sReg_b, pipeline[j]->Addr);
           break;
         case ti_JTYPE:
           printf("JTYPE:") ;
-          printf(" (PC: %x)(addr: %x)\n", pipeline[6]->PC,pipeline[6]->Addr);
+          printf(" (PC: %x)(addr: %x)\n", pipeline[j]->PC,pipeline[j]->Addr);
           break;
         case ti_SPECIAL:
           printf("SPECIAL:\n") ;      	
           break;
         case ti_JRTYPE:
           printf("JRTYPE:") ;
-          printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[6]->PC, pipeline[6]->dReg, pipeline[6]->Addr);
+          printf(" (PC: %x) (sReg_a: %d)(addr: %x)\n", pipeline[j]->PC, pipeline[j]->dReg, pipeline[j]->Addr);
           break;
 		}
 	}
-	
+	**/
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
 	{
 		/** 
 		 **insert no-ops as needed below
 		 **/
-		if ((i == 3) && (stalled == STRUCT_HAZ)) {        /*hazard with writing to the register file*/
-			pipeline[3] = &noop;
-			break;
-		}
-		else if (stalled == DATA_HAZ) {     /*hazard when instruction expects data that is still being loaded*/
-			if (data_haz_type == 0) {
+		if ((i == 3)) {        /*hazard with writing to the register file*/
+			if(stalled == STRUCT_HAZ)
+			{
 				pipeline[3] = &noop;
-			} 	
+				break;
+			}
+			else if(stalled == DATA_HAZ && data_haz_type == 0)
+			{
+				pipeline[3] = &noop;
+				break;
+			}
 		}
 		
-		if ((i==4) && (stalled == DATA_HAZ)) {	/*hazard when instruction expects data that is still being loaded*/
+		else if ((i==4) && (stalled == DATA_HAZ)) {	/*hazard when instruction expects data that is still being loaded*/
 			if (data_haz_type == 1) {
 				pipeline[4] = &noop;
+				break;
 			}
 		}
 
 		pipeline[i] = pipeline[i - 1];
 	}
 	if(squashed == CONT_HAZ) {	/*hazard when branches are incorrectly predicted*/
-		pipeline[0] = &squash;
+		pipeline[0] = &noop;
 		num_squash--;
 	}
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
+
   }
 
   trace_uninit();
