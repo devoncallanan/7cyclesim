@@ -14,7 +14,6 @@ enum trace_item_type {
 	ti_JTYPE,
 	ti_SPECIAL,
 	ti_JRTYPE
-	
 };
 
 struct trace_item {
@@ -110,3 +109,5 @@ int write_trace(struct trace_item item, char *fname)
 		
 	return 1;
 }
+
+

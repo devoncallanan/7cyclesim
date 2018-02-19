@@ -77,7 +77,7 @@ int main(int argc, char **argv)
   int i = 0, j = 0;
 
   if (argc == 1) {
-    fprintf(stdout, "\nUSAGE: tv <trace_file> <switch - any character> <branch prediction method>\n");
+    fprintf(stdout, "\nUSAGE: tv <trace_file> <branch prediction method> <switch - any character> \n");
     fprintf(stdout, "\n(switch) to turn on or off individual item view.\n\n");
     exit(0);
   }
@@ -195,6 +195,7 @@ int main(int argc, char **argv)
 	 
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
+     //printf("in branch loop ");
 	   branch_taken = pipeline[0]->Addr == tr_entry->PC;
 	   index = (pipeline[0]->Addr >> 3 ) % hash_table_size; //if you want bits 8-3 should this be left 24 and right 27? probably...gonna use mod to pick bits now
 	   if (prediction_method == 0) {
@@ -328,7 +329,7 @@ int main(int argc, char **argv)
 	  }
     }
     
-    //printf("\n haz on last inst: %d", stalled);
+    //printf("\n haz on last inst: %d", stalled | squashed);
 	
 	/*
 	//print pipeline, DEBUGGING	
@@ -404,7 +405,7 @@ int main(int argc, char **argv)
 
 		pipeline[i] = pipeline[i - 1];
 	}
-	if(squashed == CONT_HAZ) {	/*hazard when branches are incorrectly predicted*/
+	if(squashed == CONT_HAZ && !stalled) {	/*hazard when branches are incorrectly predicted*/
 		pipeline[0] = &squash;
 		num_squash--;
 	}
@@ -412,6 +413,7 @@ int main(int argc, char **argv)
 		pipeline[0] = tr_entry;
 	}
 	//printf("Current instruction: Type: %d (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[0]->type, pipeline[0]->PC, pipeline[0]->sReg_a, pipeline[0]->sReg_b, pipeline[0]->dReg);
+	//getchar();
   }
 
   trace_uninit();
