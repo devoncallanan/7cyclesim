@@ -135,13 +135,13 @@ int main(int argc, char **argv)
 	 
 	 //structural
 	 tempWB = pipeline[6]->type;
-	 tempID = pipeline[1]->type;
+	 tempID = pipeline[2]->type;
 	 
 	 //check if the WB stage is writing to the register file: i.e. is an RType, IType, or Load instruction
 	 //also check if the ID stage is reading from the register file: i.e. is an RType, Load, Store, Branch, JRType, or IType (as long as sReg_a is used) instruction
 	 if ((tempWB == ti_RTYPE) || (tempWB == ti_ITYPE) || (tempWB == ti_LOAD))	
 	 {
-		 if((tempID == ti_RTYPE) || ((tempID == ti_ITYPE) && (pipeline[1]->sReg_a != 255)) || (tempID == ti_LOAD) 
+		 if((tempID == ti_RTYPE) || ((tempID == ti_ITYPE) && (pipeline[2]->sReg_a != 255)) || (tempID == ti_LOAD) 
 		   || (tempID == ti_STORE) || (tempID == ti_BRANCH) || (tempID == ti_JRTYPE)) 
 			{
 			 stalled = STRUCT_HAZ;
@@ -281,7 +281,8 @@ int main(int argc, char **argv)
 	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
 	in each cycle (if the switch trace_view_on is set to 1). 
 	*/
-    if (trace_view_on) {/* print the executed instruction if trace_view_on=1 */	
+	/**
+    if (trace_view_on) {/* print the executed instruction if trace_view_on=1	
 	  if(pipeline[6] != NULL)
 	  {
 		  switch(pipeline[6]->type) {
@@ -324,19 +325,22 @@ int main(int argc, char **argv)
 			  break;
 		  }
 	  }
-    }
+    }**/
     
     //printf("\n haz on last inst: %d", stalled);
 	
-	/**
+	
 	//print pipeline, DEBUGGING	
 	printf("\n[cycle %d]\n ",cycle_number) ;	
 	for (j = 0; j <= 6; j++)
 	{
 		switch(pipeline[j]->type) {
         case ti_NOP:
-          printf("NOP\n") ;
-          break;
+         if(pipeline[j]->dReg == 255) {
+			printf("[cycle %d] NOP\n",cycle_number) ;
+			}
+		 else printf("[cycle %d] SQUASHED\n", cycle_number) ;
+	     break;
         case ti_RTYPE:
           printf("RTYPE:") ;
           printf(" (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[j]->PC, pipeline[j]->sReg_a, pipeline[j]->sReg_b, pipeline[j]->dReg);
@@ -370,7 +374,7 @@ int main(int argc, char **argv)
           break;
 		}
 	}
-	**/
+	
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
 	{
@@ -406,7 +410,7 @@ int main(int argc, char **argv)
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
-
+	printf("Current instruction: Type: %d (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[0]->type, pipeline[0]->PC, pipeline[0]->sReg_a, pipeline[0]->sReg_b, pipeline[0]->dReg);
   }
 
   trace_uninit();
