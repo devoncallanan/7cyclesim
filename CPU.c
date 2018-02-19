@@ -66,7 +66,8 @@ int main(int argc, char **argv)
   unsigned int cycle_number = 0;
   int stalled = NO_HAZ, squashed = NO_HAZ;
   int num_squash = 0;
-  unsigned int bp_hash_table[128][2];	//should this be 64?
+  unsigned int bp_hash_table[128][2];	//should this be 64? i wanted to not have to change the size of the array, the bit shifting will allow only 64 hash locations
+  unsigned int hash_table_size = 64;
   
   //Other variable declarations
   unsigned char tempWB, tempID;
@@ -195,10 +196,10 @@ int main(int argc, char **argv)
 	 //branch
      if (pipeline[0]->type == ti_BRANCH) {
 	   branch_taken = pipeline[0]->Addr == tr_entry->PC;
-	   index = (pipeline[0]->Addr << 24 )>> 26; //if you want bits 8-3 should this be left 24 and right 27?
+	   index = (pipeline[0]->Addr >> 3 ) % hash_table_size; //if you want bits 8-3 should this be left 24 and right 27? probably...gonna use mod to pick bits now
 	   if (prediction_method == 0) {
 		   
-		   if (pipeline[0]->Addr == tr_entry->PC) {//can this condition just be if(branch_taken)
+		   if (pipeline[0]->Addr == tr_entry->PC) {//can this condition just be if(branch_taken).  Yes, i think its form before i made the 'branch_taken' variable
 			   squashed = CONT_HAZ;
 			   num_squash = 3;
 		   }
@@ -281,8 +282,8 @@ int main(int argc, char **argv)
 	which will also output the total number of execution cycles as well as the instruction that exits the pipeline 
 	in each cycle (if the switch trace_view_on is set to 1). 
 	*/
-	/**
-    if (trace_view_on) {/* print the executed instruction if trace_view_on=1	
+	
+    if (trace_view_on) {/* print the executed instruction if trace_view_on=1	*/
 	  if(pipeline[6] != NULL)
 	  {
 		  switch(pipeline[6]->type) {
@@ -325,11 +326,11 @@ int main(int argc, char **argv)
 			  break;
 		  }
 	  }
-    }**/
+    }
     
     //printf("\n haz on last inst: %d", stalled);
 	
-	
+	/*
 	//print pipeline, DEBUGGING	
 	printf("\n[cycle %d]\n ",cycle_number) ;	
 	for (j = 0; j <= 6; j++)
@@ -374,7 +375,7 @@ int main(int argc, char **argv)
           break;
 		}
 	}
-	
+	*/
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
 	{
@@ -410,7 +411,7 @@ int main(int argc, char **argv)
 	else if(!stalled) {
 		pipeline[0] = tr_entry;
 	}
-	printf("Current instruction: Type: %d (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[0]->type, pipeline[0]->PC, pipeline[0]->sReg_a, pipeline[0]->sReg_b, pipeline[0]->dReg);
+	//printf("Current instruction: Type: %d (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[0]->type, pipeline[0]->PC, pipeline[0]->sReg_a, pipeline[0]->sReg_b, pipeline[0]->dReg);
   }
 
   trace_uninit();
