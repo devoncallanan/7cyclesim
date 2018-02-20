@@ -3,6 +3,8 @@
    just compile with gcc -o pipeline pipeline.c			
    and execute using							
    ./pipeline  /afs/cs.pitt.edu/courses/1541/short_traces/sample.tr	0  
+   
+   code by Devon Callanan, Jen Dudek and Michael Ing
 ***************************************************************/
 
 #include <stdio.h>
@@ -65,7 +67,7 @@ int main(int argc, char **argv)
   int stalled = NO_HAZ, squashed = NO_HAZ;
   int num_squash = 0;
   unsigned int bp_hash_table[128][2];
-  unsigned int hash_table_size = 64;
+  unsigned int hash_table_size = 32;
   
   //Other variable declarations
   unsigned char tempWB, tempID;
