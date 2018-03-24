@@ -2,3 +2,4 @@
 *.tr
 .DS_Store
 cpu
+~*
