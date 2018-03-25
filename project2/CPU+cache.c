@@ -16,7 +16,9 @@ enum hazard_type {
 	NO_HAZ = 0,
 	STRUCT_HAZ,
 	DATA_HAZ,
-	CONT_HAZ
+	CONT_HAZ,
+	INST_ACC, 
+	DATA_ACC
 };
 
 enum pipeline_stage {
@@ -75,6 +77,14 @@ int main(int argc, char **argv)
   int branch_taken;
   char index;  
   int i = 0, j = 0;
+  
+  //Cache variable declarations
+  struct *L1_I = cache_create(0, 0, 0, 0);
+  struct *L1_D = cache_create(0, 0, 0, 0);
+  struct *L2 = cache_create(0, 0, 0, 0);
+  int total_latency = 0;
+  int cache_delay = NO_HAZ;
+  int accesstype = 0; //denotes what type of access to memory is being made, 0 for memread and 1 for memwrite
 
   if (argc == 1) {
     fprintf(stdout, "\nUSAGE: tv <trace_file> <branch prediction method> <switch - any character> \n");
@@ -126,6 +136,29 @@ int main(int argc, char **argv)
 		squashed = NO_HAZ;
 	stalled = NO_HAZ;
 	
+	/** 
+	 **Check for cache access first to see if there is any pipeline stalling, and calculate total latency for a single instruction or data access. 
+	 **Check for stalling in MEM1 (L1 Data Cache) first, followed by IF1 (L1 Instruction Cache) if there is no stalling in MEM1
+	 **Resolve current stalling entirely before moving on to next case of stalling
+	 **If stalling in L1 Data cache is detected while waiting for L1 Instruction cache, stall until first data access is resolved
+	 **/
+	 if(total_latency == 0)
+	 {
+		 cache_delay = NO_HAZ;
+		 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, accesstype); 		//checks for an L1_D miss
+		 if(total_latency == 0)			
+		 {
+			 total_latency = cache_access(L1_I, L2, pipeline[0]->Addr, accesstype);		//no L1_D miss, so checks for L1_I miss
+			 if(total_Latency != 0)
+				 cache_delay = INST_ACC;												//confirmed L1_I miss
+		 }
+		 else
+			 cache_delay = DATA_ACC;													//confirmed L1_D miss
+	 }
+	 else if(cache_delay = INST_ACC && cache_access(L1_D, L@, pipeline[4]->Addr, accesstype) != 0)
+		 cache_delay = DATA_ACC;														//handles unique scenario where stalling in L1 Instruction cache, but then 
+																						//  detects another stalling in L1 Data cahce before finished accessing instruction
+
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
 	 **If there are both, fixing only the data hazard should fix both, so setting it second
@@ -319,6 +352,26 @@ int main(int argc, char **argv)
 		/** 
 		 **insert no-ops as needed below
 		 **/
+		if(i==5) 				/* check for Data Access stalling */
+		{
+			if(cache_delay == DATA_ACC)
+			{
+				pipeline[5] = &noop;
+				total_latency--;
+				break;
+			}
+		}
+		
+		if(i==1)				/* check for Instruction Access stalling */
+		{
+			if(cache_delay == INST_ACC)
+			{
+				pipeline[1] = &noop;
+				total_latency--;
+				break;
+			}
+		}
+		 
 		if ((i == 3)) {        /*hazard with writing to the register file*/
 			if(stalled == STRUCT_HAZ)
 			{
@@ -341,11 +394,11 @@ int main(int argc, char **argv)
 
 		pipeline[i] = pipeline[i - 1];
 	}
-	if(squashed == CONT_HAZ && !stalled) {	/*hazard when branches are incorrectly predicted*/
+	if(cache_delay == NO_HAZ && squashed == CONT_HAZ && !stalled) {		/*hazard when branches are incorrectly predicted, must have no cache misses and no other hazards*/
 		pipeline[0] = &squash;
 		num_squash--;
 	}
-	else if(!stalled) {
+	else if(!stalled && cache_delay == NO_HAZ) {
 		pipeline[0] = tr_entry;
 	}
   }
