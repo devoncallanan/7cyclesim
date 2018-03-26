@@ -1,5 +1,5 @@
 
-*.tr
+*.tr*
 .DS_Store
 cpu
 ~*
