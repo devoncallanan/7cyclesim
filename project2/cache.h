@@ -152,80 +152,75 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 		if(access_type == 1) L1->blocks[L1_index][i].dirty = 1 ;
 	}
 	
-	
-	//L2 HIT------------------------------------------------------------------------------------------------
-	for (i = 0; i < L2->assoc; i++) {	/* look for the requested block */
-		if (L2->blocks[L2_index][i].tag == L2_tag && L2->blocks[L2_index][i].valid == 1) {
-			updateLRU(L2, L2_index, i) ;
-			L2_hits++;
-			if (access_type == 1) {
-				L2->blocks[L2_index][i].dirty = 1 ;
-			}
-			return(latency);					/* a cache hit */ //IF THIS IS HIT THEN WE DONT RETURN LATENCY BUT JUMP TO L1 MISS INFO
-		}
-	}
-	
-	//L2 MISS------------------------------------------------------------------------------------------------
-	for (way=0 ; way < L2->assoc ; way++){		/* look for an invalid entry */
-		if (L2->blocks[L2_index][way].valid == 0) {
-			latency = latency + L2->mem_latency;	/* account for reading the block from memory*/
-													/* should instead read from L2, in case you have an L2 */
-			L2_misses++;										
-			L2->blocks[L2_index][way].valid = 1 ;
-		    L2->blocks[L2_index][way].tag = L2_tag ;
-		    updateLRU(L2, L2_index, way); 
-		    L2->blocks[L2_index][way].dirty = 0;
-			
-		    if(access_type == 1) L2->blocks[L2_index][way].dirty = 1 ;
-			
-			return(latency);				/* an invalid entry is available*/ //JUMP TO L1 MISS
-		}
-	}
-	
-	max = L2->blocks[L2_index][0].LRU ;	/* find the LRU block */
-	way = 0 ;
-	
-	for (i=1 ; i< L2->assoc ; i++) {
-		//Find LRU in L2
-		if (L2->blocks[L2_index][i].LRU > max) {
-			//Rehash to check in L1
-			rehash_address = (L2_index + (L2->blocks[L2_index][i].tag * L2->nsets) * L2->blocksize);
-			temp_block_address = (rehash_address / L1->blocksize);
-			temp_tag =  temp_block_address / L1->nsets;
-			temp_index = temp_block_address - (temp_tag * L1->nsets);
-			//Check LRU against L1 cache
-			for (temp = 0; temp < L1->assoc; temp++) {
-				//If LRU isn't in L1 then you can evict it
-				if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].valid != 1) {
-					max = L2->blocks[L2_index][i].LRU ;
-					way = i ;
+	if (L2->nsets != 0) {
+		//L2 HIT------------------------------------------------------------------------------------------------
+		for (i = 0; i < L2->assoc; i++) {	/* look for the requested block */
+			if (L2->blocks[L2_index][i].tag == L2_tag && L2->blocks[L2_index][i].valid == 1) {
+				updateLRU(L2, L2_index, i) ;
+				L2_hits++;
+				if (access_type == 1) {
+					L2->blocks[L2_index][i].dirty = 1 ;
 				}
+				return(latency);					/* a cache hit */ //IF THIS IS HIT THEN WE DONT RETURN LATENCY BUT JUMP TO L1 MISS INFO
 			}
-			
 		}
-	} 
-	   
-	
-	//If dirty in L2, WRITE BACK
-	if (L2->blocks[L2_index][way].dirty == 1) {
-		latency = latency + L2->mem_latency;
-	} /*else {
-		//If dirty in L1 WRITE BACK
-		for (temp = 0; temp < L1->assoc; temp++) {
-			if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].dirty == 1) {
-				latency = latency + L2->mem_latency;	// for writing back the evicted block 
-				L1->blocks[L1_index][temp].valid = 0;	//Evicted block from L1 to keep inclusive
-			} 
+		
+		//L2 MISS------------------------------------------------------------------------------------------------
+		for (way=0 ; way < L2->assoc ; way++){		/* look for an invalid entry */
+			if (L2->blocks[L2_index][way].valid == 0) {
+				latency = latency + L2->mem_latency;	/* account for reading the block from memory*/
+														/* should instead read from L2, in case you have an L2 */
+				L2_misses++;										
+				L2->blocks[L2_index][way].valid = 1 ;
+				L2->blocks[L2_index][way].tag = L2_tag ;
+				updateLRU(L2, L2_index, way); 
+				L2->blocks[L2_index][way].dirty = 0;
+				
+				if(access_type == 1) L2->blocks[L2_index][way].dirty = 1 ;
+				
+				return(latency);				/* an invalid entry is available*/ //JUMP TO L1 MISS
+			}
 		}
-	} */ //If not dirty at all then no latency added and it is just evicted from L2
+		
+		max = L2->blocks[L2_index][0].LRU ;	/* find the LRU block */
+		way = 0 ;
+		
+		for (i=1 ; i< L2->assoc ; i++) {
+			//Find LRU in L2
+			if (L2->blocks[L2_index][i].LRU > max) {
+				//Rehash to check in L1
+				rehash_address = (L2_index + (L2->blocks[L2_index][i].tag * L2->nsets) * L2->blocksize);
+				temp_block_address = (rehash_address / L1->blocksize);
+				temp_tag =  temp_block_address / L1->nsets;
+				temp_index = temp_block_address - (temp_tag * L1->nsets);
+				//Check LRU against L1 cache
+				for (temp = 0; temp < L1->assoc; temp++) {
+					//If LRU isn't in L1 then you can evict it
+					if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].valid != 1) {
+						max = L2->blocks[L2_index][i].LRU ;
+						way = i ;
+					}
+				}
+				
+			}
+		} 
+		   
+		
+		//If dirty in L2, WRITE BACK
+		if (L2->blocks[L2_index][way].dirty == 1) {
+			latency = latency + L2->mem_latency;
+		} 
+		
+		L2_misses++;
+		latency = latency + L2->mem_latency;		/* for reading the block from memory*/
+													/* should instead write to and/or read from L2, in case you have an L2 */
+		L2->blocks[L2_index][way].tag = L2_tag ;
+		updateLRU(L2, L2_index, way) ;
+		L2->blocks[L2_index][i].dirty = 0 ;
+		if(access_type == 1) L2->blocks[L2_index][i].dirty = 1 ;
+	}
 	
-	L2_misses++;
-	latency = latency + L2->mem_latency;		/* for reading the block from memory*/
-												/* should instead write to and/or read from L2, in case you have an L2 */
-	L2->blocks[L2_index][way].tag = L2_tag ;
-	updateLRU(L2, L2_index, way) ;
-	L2->blocks[L2_index][i].dirty = 0 ;
-	if(access_type == 1) L2->blocks[L2_index][i].dirty = 1 ;
+	
 	//------------------------------------------------------------------------------------------------------------
 	
 	return(latency) ;

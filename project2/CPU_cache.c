@@ -80,9 +80,10 @@ int main(int argc, char **argv)
   int i = 0, j = 0;
   
   //Cache variable declarations
-  struct cache_t *L1_I = cache_create(4, 16, 1, 6);
-  struct cache_t *L1_D = cache_create(4, 16, 1, 6);
-  struct cache_t *L2 = cache_create(512, 16, 4, 80);
+  struct cache_t *L1_I = cache_create(4, 16, 1, 80);
+  struct cache_t *L1_D = cache_create(4, 16, 1, 80);
+  struct cache_t *L2 = cache_create(0, 1, 1, 1);
+  //struct cache_t *L2 = cache_create(512, 16, 4, 80);
   int total_latency = 0;
   int cache_delay = NO_HAZ;
   int accesstype = 0; //denotes what type of access to memory is being made, 0 for memread and 1 for memwrite
@@ -133,11 +134,11 @@ int main(int argc, char **argv)
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
 		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses\n", L1_D_accesses, L1_D_hits, L1_D_misses);
 		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses\n", L1_I_accesses, L1_I_hits, L1_I_misses);
-		printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses\n", L2_accesses, L2_hits, L2_misses);
+		//printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses\n", L2_accesses, L2_hits, L2_misses);
         break;
 	  }
     }
-    else if (stalled == NO_HAZ && squashed == NO_HAZ){              /* parse the next instruction to simulate */
+    else if (stalled == NO_HAZ && squashed == NO_HAZ && cache_delay == NO_HAZ){              /* parse the next instruction to simulate */
 
 		size = trace_get_item(&tr_entry);
 
@@ -155,16 +156,24 @@ int main(int argc, char **argv)
 	 **/
 	 if(total_latency == 0)
 	 {
+		 printf("Cache_delay: %d\n", cache_delay);
 		 cache_delay = NO_HAZ;
 		 if (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) {
-			 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, accesstype); 		//checks for an L1_D miss
+			 if (pipeline[4]->type == ti_LOAD) {
+				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0); 		//checks for an L1_D miss
+			 } else {
+				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1); 		//checks for an L1_D miss
+			 }
+			 if (total_latency == 0) {
+				 L1_D_hits++;
+			 }
 			 L1_D_accesses++;
 		 }
 		 
 		 if(total_latency == 0)			
 		 {
-			 L1_D_hits++;
-			 total_latency = cache_access(L1_I, L2, pipeline[0]->Addr, accesstype);		//no L1_D miss, so checks for L1_I miss
+
+			 total_latency = cache_access(L1_I, L2, pipeline[0]->Addr, 0);		//no L1_D miss, so checks for L1_I miss
 			 L1_I_accesses++;
 			 if(total_latency != 0) {
 				cache_delay = INST_ACC;												//confirmed L1_I miss
@@ -179,14 +188,9 @@ int main(int argc, char **argv)
 			 L1_D_misses++;
 		 }
 	 } else {
-		 if(cache_delay = INST_ACC && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) && cache_access(L1_D, L2, pipeline[4]->Addr, accesstype) != 0) {
-			 L1_D_accesses++;
-			 L1_D_misses++;
+		 if(cache_delay == INST_ACC && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) && cache_access(L1_D, L2, pipeline[4]->Addr, accesstype) != 0) {
 			 cache_delay = DATA_ACC;														//handles unique scenario where stalling in L1 Instruction cache, but then 
-		 }	else {																			//  detects another stalling in L1 Data cahce before finished accessing instruction
-			 L1_D_accesses++;
-			 L1_D_hits++;
-		 }
+		 }																		//  detects another stalling in L1 Data cahce before finished accessing instruction
 	 } 
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -374,6 +378,7 @@ int main(int argc, char **argv)
 		  break;
 	  }
     }
+	printf("Latency %u in cycles and then the cache access type %d\n", total_latency, cache_delay);
 
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
@@ -386,7 +391,7 @@ int main(int argc, char **argv)
 			if(cache_delay == DATA_ACC)
 			{
 				pipeline[5] = &noop;
-				total_latency--;
+				//total_latency--;
 				break;
 			}
 		}
@@ -396,7 +401,7 @@ int main(int argc, char **argv)
 			if(cache_delay == INST_ACC)
 			{
 				pipeline[1] = &noop;
-				total_latency--;
+				//total_latency--;
 				break;
 			}
 		}
@@ -420,7 +425,7 @@ int main(int argc, char **argv)
 				break;
 			}
 		}
-
+		
 		pipeline[i] = pipeline[i - 1];
 	}
 	if(cache_delay == NO_HAZ && squashed == CONT_HAZ && !stalled) {		/*hazard when branches are incorrectly predicted, must have no cache misses and no other hazards*/
@@ -430,6 +435,10 @@ int main(int argc, char **argv)
 	else if(!stalled && cache_delay == NO_HAZ) {
 		pipeline[0] = tr_entry;
 	}
+	
+	if (total_latency != 0) {
+			total_latency--;
+		}
   }
 
   trace_uninit();
