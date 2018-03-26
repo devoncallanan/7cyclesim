@@ -97,6 +97,7 @@ int main(int argc, char **argv)
   unsigned int L1_D_misses = 0;
   float L1_I_missrate = 0;
   float L1_D_missrate = 0;
+  float L2_missrate = 0;
 
   if (argc == 1) {
     fprintf(stdout, "\nUSAGE: tv <trace_file> <branch prediction method> <switch - any character> \n");
@@ -136,10 +137,11 @@ int main(int argc, char **argv)
 	  if (pipe_occupancy == 0) {
 		  L1_I_missrate = ((float)L1_I_misses/(float)L1_I_accesses) * 100;
 		  L1_D_missrate = ((float)L1_D_misses/(float)L1_D_accesses) * 100;
+		  L2_missrate = ((float)L2_misses/(float)L2_accesses) * 100;
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
 		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_D_accesses, L1_D_hits, L1_D_misses, L1_D_missrate);
 		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_I_accesses, L1_I_hits, L1_I_misses, L1_I_missrate);
-		//printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses\n", L2_accesses, L2_hits, L2_misses);
+		printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses, %.1f miss rate\n", L2_accesses, L2_hits, L2_misses, L2_missrate);
         break;
 	  }
     }

@@ -117,7 +117,9 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 		if (L1->blocks[L1_index][way].valid == 0) {
 			latency = latency + L1->mem_latency;	/* account for reading the block from memory*/
 													/* should instead read from L2, in case you have an L2 */
-			L2_accesses++;										
+			if (L2->nsets != 0) {
+				L2_accesses++;														
+			}
 			L1->blocks[L1_index][way].valid = 1 ;
 		    L1->blocks[L1_index][way].tag = L1_tag ;
 		    updateLRU(L1, L1_index, way); 
