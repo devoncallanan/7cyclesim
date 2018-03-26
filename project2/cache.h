@@ -114,7 +114,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 	//L1 CACHE MISS------------------------------------------------------------------------------------------------
 	/* a cache miss */
 	for (way=0 ; way < L1->assoc ; way++){		/* look for an invalid entry */
-		if (L1->blocks[L1_index][way].valid == 0) {
+		if (L1->blocks[L1_index][way].valid == 0 && flag != 1) {
 			latency = latency + L1->mem_latency;	/* account for reading the block from memory*/
 													/* should instead read from L2, in case you have an L2 */
 			if (L2->nsets != 0) {
@@ -143,7 +143,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 		} 
 		
 		if (L1->blocks[L1_index][way].dirty == 1) {
-			latency = latency + L1->mem_latency;	/* for writing back the evicted block */
+			latency = latency + L1->mem_latency;	/* for writing back the evicted block */ ///also set the L2 location to dirty
 		} 
 		
 		latency = latency + L1->mem_latency;		/* for reading the block from memory*/
