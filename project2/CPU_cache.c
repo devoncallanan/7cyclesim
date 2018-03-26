@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include <math.h>
 #include "CPU.h" 
 #include "cache.h"
 
@@ -94,6 +95,8 @@ int main(int argc, char **argv)
   unsigned int L1_D_accesses = 0;
   unsigned int L1_D_hits = 0;
   unsigned int L1_D_misses = 0;
+  float L1_I_missrate = 0;
+  float L1_D_missrate = 0;
 
   if (argc == 1) {
     fprintf(stdout, "\nUSAGE: tv <trace_file> <branch prediction method> <switch - any character> \n");
@@ -131,9 +134,11 @@ int main(int argc, char **argv)
 	  pipe_occupancy--;
 	  tr_entry = &noop;
 	  if (pipe_occupancy == 0) {
+		  L1_I_missrate = ((float)L1_I_misses/(float)L1_I_accesses) * 100;
+		  L1_D_missrate = ((float)L1_D_misses/(float)L1_D_accesses) * 100;
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
-		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses\n", L1_D_accesses, L1_D_hits, L1_D_misses);
-		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses\n", L1_I_accesses, L1_I_hits, L1_I_misses);
+		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_D_accesses, L1_D_hits, L1_D_misses, L1_D_missrate);
+		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_I_accesses, L1_I_hits, L1_I_misses, L1_I_missrate);
 		//printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses\n", L2_accesses, L2_hits, L2_misses);
         break;
 	  }
@@ -156,7 +161,7 @@ int main(int argc, char **argv)
 	 **/
 	 if(total_latency == 0)
 	 {
-		 printf("Cache_delay: %d\n", cache_delay);
+		 //printf("Cache_delay: %d\n", cache_delay);
 		 cache_delay = NO_HAZ;
 		 if (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) {
 			 if (pipeline[4]->type == ti_LOAD) {
@@ -378,7 +383,7 @@ int main(int argc, char **argv)
 		  break;
 	  }
     }
-	printf("Latency %u in cycles and then the cache access type %d\n", total_latency, cache_delay);
+	//printf("Latency %u in cycles and then the cache access type %d\n", total_latency, cache_delay);
 
 	//Pipeline advancing loop
 	for (i = 6; i >= 1; i = i - 1)
