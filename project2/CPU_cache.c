@@ -86,6 +86,7 @@ int main(int argc, char **argv)
   struct cache_t *L2 = cache_create(0, 1, 1, 1);
   //struct cache_t *L2 = cache_create(512, 16, 4, 80);
   int total_latency = 0;
+  int temp_latency = 0;
   int cache_delay = NO_HAZ;
   int accesstype = 0; //denotes what type of access to memory is being made, 0 for memread and 1 for memwrite
 
@@ -95,8 +96,8 @@ int main(int argc, char **argv)
   unsigned int L1_D_accesses = 0;
   unsigned int L1_D_hits = 0;
   unsigned int L1_D_misses = 0;
-	unsigned int D_inst_checked = 0;
-	unsigned int I_inst_checked = -1;
+	unsigned int D_just_checked = -1;
+	unsigned int I_just_checked = -1;
   float L1_I_missrate = 0;
   float L1_D_missrate = 0;
   float L2_missrate = 0;
@@ -133,7 +134,7 @@ int main(int argc, char **argv)
 
   while(1) {
 
-    if (!size && total_latency == 0) {       /* no more instructions (trace_items) to simulate */
+    if (!size && total_latency == 0 && !squashed && !stalled) {       /* no more instructions (trace_items) to simulate */
 	  pipe_occupancy--;
 	  tr_entry = &noop;
 	  if (pipe_occupancy == 0) {
@@ -144,6 +145,7 @@ int main(int argc, char **argv)
 		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_D_accesses, L1_D_hits, L1_D_misses, L1_D_missrate);
 		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_I_accesses, L1_I_hits, L1_I_misses, L1_I_missrate);
 		printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L2_accesses, L2_hits, L2_misses, L2_missrate);
+		printf("pipeline[6]: (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
         break;
 	  }
     }
@@ -170,44 +172,59 @@ int main(int argc, char **argv)
 		 {
 		 	cache_delay = NO_HAZ;
 		 }
-		 else {
-			 if (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) {
-				 if (pipeline[4]->type == ti_LOAD) {
-					 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0); 		//checks for an L1_D miss
-				 } else {
-					 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1); 		//checks for an L1_D miss
-				 }
-				 if (total_latency == 0) {
-					 L1_D_hits++;
-				 }
-				 L1_D_accesses++;
+		 //else {
+		 if (pipeline[4]->PC != D_just_checked && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE)) {
+			 if (pipeline[4]->type == ti_LOAD) {
+				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0); 		//checks for an L1_D miss
+			 } else {
+				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1); 		//checks for an L1_D miss
 			 }
-
-			 if(total_latency == 0)
-			 {
-				 if (pipeline[0]->dReg != 255 && pipeline[0]->PC != I_inst_checked) //check for no-op and if the instruction was just checked
-				 {
-					 total_latency = cache_access(L1_I, L2, pipeline[0]->PC, 0);		//no L1_D miss, so checks for L1_I miss
-					 L1_I_accesses++;
-					 I_inst_checked = pipeline[0]->PC;
-					 if(total_latency != 0) {
-						cache_delay = INST_ACC;												//confirmed L1_I miss
-						L1_I_misses++;
-					 } else {
-						L1_I_hits++;
-					 }
-			 	}
-
+			 if (total_latency == 0) {
+				 L1_D_hits++;
 			 }
-			 else {
-				 cache_delay = DATA_ACC;													//confirmed L1_D miss
-				 L1_D_misses++;
-			 }
+			 L1_D_accesses++;
+			 D_just_checked = pipeline[4]->PC;
 		 }
+
+		 if(total_latency == 0)
+		 {
+			 if (pipeline[0]->dReg != 255 && pipeline[0]->PC != I_just_checked) //check for no-op and if the instruction was just checked
+			 {
+				 total_latency = cache_access(L1_I, L2, pipeline[0]->PC, 0);		//no L1_D miss, so checks for L1_I miss
+				 L1_I_accesses++;
+				 I_just_checked = pipeline[0]->PC;
+				 if(total_latency != 0) {
+					cache_delay = INST_ACC;												//confirmed L1_I miss
+					L1_I_misses++;
+				 } else {
+					L1_I_hits++;
+				 }
+			}
+
+		 }
+		 else {
+			 cache_delay = DATA_ACC;													//confirmed L1_D miss
+			 L1_D_misses++;
+		 }
+		 //}
 	 } else {
-		 if(cache_delay == INST_ACC && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE) && cache_access(L1_D, L2, pipeline[4]->Addr, accesstype) != 0) {
-			 cache_delay = DATA_ACC;														//handles unique scenario where stalling in L1 Instruction cache, but then
-		 }																		//  detects another stalling in L1 Data cahce before finished accessing instruction
+		 if(cache_delay == INST_ACC && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE)) {
+			 temp_latency = 0;
+			 if(pipeline[4]->type == ti_LOAD)
+				 temp_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0);
+			 else
+				 temp_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1);
+			 if(temp_latency != 0)
+			 {
+				cache_delay = DATA_ACC;												//handles unique scenario where stalling in L1 Instruction cache, but then
+				L1_D_misses++;														//  detects another stalling in L1 Data cache before finished accessing instruction	
+			 }	
+			 else 
+				 L1_D_hits++;
+			 D_just_checked = pipeline[4]->PC;
+			 total_latency += temp_latency;
+			 L1_D_accesses++;
+		 }																					
 	 }
 	/**
 	 **Check for hazards here. Suggested order is structural hazards then data hazards.
@@ -355,6 +372,8 @@ int main(int argc, char **argv)
 	*/
 
     if (trace_view_on) {/* print the executed instruction if trace_view_on=1	*/
+	  if(pipe_occupancy < 7)
+		  printf("pipe_occupancy: %d\n", pipe_occupancy);
 	  switch(pipeline[6]->type) {
 		case ti_NOP:
 		  if(pipeline[6]->dReg == 255) {
