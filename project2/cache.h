@@ -108,13 +108,14 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 
 	//L1 CACHE MISS------------------------------------------------------------------------------------------------
 	/* a cache miss */
+	if (L2->nsets != 0) {
+		L2_accesses++;
+	}
 	for (way=0 ; way < L1->assoc ; way++){		/* look for an invalid entry */
 		if (L1->blocks[L1_index][way].valid == 0 && flag != 1) {
 			latency = latency + L1->mem_latency;	/* account for reading the block from memory*/
 													/* should instead read from L2, in case you have an L2 */
-			if (L2->nsets != 0) {
-				L2_accesses++;
-			}
+			
 			L1->blocks[L1_index][way].valid = 1 ;
 		    L1->blocks[L1_index][way].tag = L1_tag ;
 		    updateLRU(L1, L1_index, way);
