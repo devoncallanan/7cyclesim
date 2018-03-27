@@ -79,12 +79,49 @@ int main(int argc, char **argv)
   int branch_taken;
   char index;
   int i = 0, j = 0;
+  
+  
+  
+  //For file reading
+	unsigned int I_size = 0;
+	unsigned int I_assoc = 0;
+	unsigned int D_size = 0;
+	unsigned int D_assoc = 0;
+	unsigned int L2_size = 0;
+	unsigned int L2_assoc = 0;
+	unsigned int block_size = 0;
+	unsigned int L2_access_time = 0;
+	unsigned int memory_access_time = 0;
+  //Reading in the cache configurations
+  FILE *cache_info;
+	cache_info = fopen("cache_config.txt", "r");
+	fscanf(cache_info, "%d", &I_size);
+	fscanf(cache_info, "%d", &I_assoc);
+	fscanf(cache_info, "%d", &D_size);
+	fscanf(cache_info, "%d", &D_assoc);
+	fscanf(cache_info, "%d", &L2_size);
+	fscanf(cache_info, "%d", &L2_assoc);
+	fscanf(cache_info, "%d", &block_size);
+	fscanf(cache_info, "%d", &L2_access_time);
+	fscanf(cache_info, "%d", &memory_access_time);
+	fclose(cache_info);
 
+	struct cache_t *L1_I;
+	struct cache_t *L1_D;
+	struct cache_t *L2;
   //Cache variable declarations
-  struct cache_t *L1_I = cache_create(4, 16, 4, 80);
-  struct cache_t *L1_D = cache_create(4, 16, 4, 80);
-  struct cache_t *L2 = cache_create(0, 1, 1, 1);
-  //struct cache_t *L2 = cache_create(512, 16, 4, 80);
+  if (L2_size == 0) {
+	L1_I = cache_create(I_size, block_size, I_assoc, memory_access_time);
+	L1_D = cache_create(D_size, block_size, D_assoc, memory_access_time);
+	L2 = cache_create(L2_size, block_size, 1, 1); 
+  } else {
+	L1_I = cache_create(I_size, block_size, I_assoc, L2_access_time);
+	L1_D = cache_create(D_size, block_size, D_assoc, L2_access_time);
+	L2 = cache_create(L2_size, block_size, L2_assoc, memory_access_time);
+  }
+
+  
+  
   int total_latency = 0;
   int temp_latency = 0;
   int cache_delay = NO_HAZ;
@@ -138,13 +175,17 @@ int main(int argc, char **argv)
 	  pipe_occupancy--;
 	  tr_entry = &noop;
 	  if (pipe_occupancy == 0) {
-		  L1_I_missrate = ((float)L1_I_misses/(float)L1_I_accesses) * 100;
-		  L1_D_missrate = ((float)L1_D_misses/(float)L1_D_accesses) * 100;
-		  //L2_missrate = ((float)L2_misses/(float)L2_accesses) * 100;
+		L1_I_missrate = ((float)L1_I_misses/(float)L1_I_accesses) * 100;
+		L1_D_missrate = ((float)L1_D_misses/(float)L1_D_accesses) * 100;
         printf("+ Simulation terminates at cycle : %u\n", cycle_number);
 		printf("- L1 Data Cache: \t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_D_accesses, L1_D_hits, L1_D_misses, L1_D_missrate);
 		printf("- L1 Instruction Cache: \t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L1_I_accesses, L1_I_hits, L1_I_misses, L1_I_missrate);
-		printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L2_accesses, L2_hits, L2_misses, L2_missrate);
+		
+		if (L2_size != 0) {
+			L2_missrate = ((float)L2_misses/(float)L2_accesses) * 100;
+			printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L2_accesses, L2_hits, L2_misses, L2_missrate);
+		}
+		
 		printf("pipeline[6]: (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
         break;
 	  }
