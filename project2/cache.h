@@ -148,7 +148,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 													/* should instead write to and/or read from L2, in case you have an L2 */
 		L1->blocks[L1_index][way].tag = L1_tag ;
 		updateLRU(L1, L1_index, way) ;
-		L1->blocks[L1_index][i].dirty = 0 ;							//-----------SHOULDNT i BE way????
+		L1->blocks[L1_index][i].dirty = 0 ;			
 		if(access_type == 1) L1->blocks[L1_index][i].dirty = 1 ;
 	}
 
@@ -220,7 +220,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 													/* should instead write to and/or read from L2, in case you have an L2 */
 		L2->blocks[L2_index][way].tag = L2_tag ;
 		updateLRU(L2, L2_index, way) ;
-		L2->blocks[L2_index][i].dirty = 0 ;							//ONCE AGAIN SHOULDNT i be WAY
+		L2->blocks[L2_index][i].dirty = 0 ;			
 		if(access_type == 1) L2->blocks[L2_index][i].dirty = 1 ;
 	}
 
