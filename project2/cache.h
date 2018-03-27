@@ -184,6 +184,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 
 		max = L2->blocks[L2_index][0].LRU ;	/* find the LRU block */
 		way = 0 ;
+		unsigned int flag = 0;
 
 		for (i=1 ; i< L2->assoc ; i++) {
 			//Find LRU in L2
@@ -196,10 +197,13 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 				//Check LRU against L1 cache
 				for (temp = 0; temp < L1->assoc; temp++) {
 					//If LRU isn't in L1 then you can evict it
-					if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].valid != 1) {
-						max = L2->blocks[L2_index][i].LRU ;
-						way = i ;
+					if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].valid == 1) {
+						flag = 1;
 					}
+				}
+				if (flag == 0) {
+					max = L2->blocks[L2_index][i].LRU ;
+					way = i ;
 				}
 
 			}
