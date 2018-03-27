@@ -58,7 +58,7 @@ int updateLRU(struct cache_t *cp ,int index, int way)
 	cp->blocks[index][way].LRU = 0 ;
 }
 
-int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, int access_type /*0 for read, 1 for write*/)
+int cache_access(struct cache_t *L1, struct cache_t *L2, struct cache_t *otherL1, unsigned long address, int access_type /*0 for read, 1 for write*/)
 {
 
 
@@ -199,6 +199,9 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, unsigned long address, 
 				for (temp = 0; temp < L1->assoc; temp++) {
 					//If LRU isn't in L1 then you can evict it
 					if (L1->blocks[temp_index][temp].tag == temp_tag && L1->blocks[temp_index][temp].valid == 1) {
+						flag = 1;
+					}
+					if (otherL1->blocks[temp_index][temp].tag == temp_tag && otherL1->blocks[temp_index][temp].valid == 1) {
 						flag = 1;
 					}
 				}
