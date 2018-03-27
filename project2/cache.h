@@ -52,7 +52,6 @@ int updateLRU(struct cache_t *cp ,int index, int way)
 	int k ;
 	for (k=0 ; k< cp->assoc ; k++)
 	{
-	  if(cp->blocks[index][k].LRU < cp->blocks[index][way].LRU)
 		 cp->blocks[index][k].LRU = cp->blocks[index][k].LRU + 1 ;
 	}
 	cp->blocks[index][way].LRU = 0 ;

@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 			printf("- L2 Cache: \t\t\t %u accesses, %u hits, %u misses, %.1f%% miss rate\n", L2_accesses, L2_hits, L2_misses, L2_missrate);
 		}
 		
-		printf("pipeline[6]: (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
+		//printf("pipeline[6]: (PC: %x)(sReg_a: %d)(sReg_b: %d)(dReg: %d) \n", pipeline[6]->PC, pipeline[6]->sReg_a, pipeline[6]->sReg_b, pipeline[6]->dReg);
         break;
 	  }
     }
@@ -417,10 +417,11 @@ int main(int argc, char **argv)
 		  printf("pipe_occupancy: %d\n", pipe_occupancy);
 	  switch(pipeline[6]->type) {
 		case ti_NOP:
+			/*
 		  if(pipeline[6]->dReg == 255) {
 			printf("[cycle %d] NOP\n",cycle_number) ;
 		  }
-		  else printf("[cycle %d] SQUASHED\n", cycle_number) ;
+		  else printf("[cycle %d] SQUASHED\n", cycle_number) ;*/
 		  break;
 		case ti_RTYPE:
 		  printf("[cycle %d] RTYPE:",cycle_number) ;
