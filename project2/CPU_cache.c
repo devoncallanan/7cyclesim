@@ -216,9 +216,9 @@ int main(int argc, char **argv)
 		 //else {
 		 if (pipeline[4]->PC != D_just_checked && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE)) {
 			 if (pipeline[4]->type == ti_LOAD) {
-				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0); 		//checks for an L1_D miss
+				 total_latency = cache_access(L1_D, L2, L1_I, pipeline[4]->Addr, 0); 		//checks for an L1_D miss
 			 } else {
-				 total_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1); 		//checks for an L1_D miss
+				 total_latency = cache_access(L1_D, L2, L1_I, pipeline[4]->Addr, 1); 		//checks for an L1_D miss
 			 }
 			 if (total_latency == 0) {
 				 L1_D_hits++;
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 		 {
 			 if (pipeline[0]->dReg != 255 && pipeline[0]->PC != I_just_checked) //check for no-op and if the instruction was just checked
 			 {
-				 total_latency = cache_access(L1_I, L2, pipeline[0]->PC, 0);		//no L1_D miss, so checks for L1_I miss
+				 total_latency = cache_access(L1_I, L2, L1_D, pipeline[0]->PC, 0);		//no L1_D miss, so checks for L1_I miss
 				 L1_I_accesses++;
 				 I_just_checked = pipeline[0]->PC;
 				 if(total_latency != 0) {
@@ -252,9 +252,9 @@ int main(int argc, char **argv)
 		 if(cache_delay == INST_ACC && (pipeline[4]->type == ti_LOAD || pipeline[4]->type == ti_STORE)) {
 			 temp_latency = 0;
 			 if(pipeline[4]->type == ti_LOAD)
-				 temp_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 0);
+				 temp_latency = cache_access(L1_D, L2, L1_I, pipeline[4]->Addr, 0);
 			 else
-				 temp_latency = cache_access(L1_D, L2, pipeline[4]->Addr, 1);
+				 temp_latency = cache_access(L1_D, L2, L1_I, pipeline[4]->Addr, 1);
 			 if(temp_latency != 0)
 			 {
 				cache_delay = DATA_ACC;												//handles unique scenario where stalling in L1 Instruction cache, but then
