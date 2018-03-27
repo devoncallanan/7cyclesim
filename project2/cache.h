@@ -114,7 +114,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, struct cache_t *otherL1
 		if (L1->blocks[L1_index][way].valid == 0 && flag != 1) {
 			latency = latency + L1->mem_latency;	/* account for reading the block from memory*/
 													/* should instead read from L2, in case you have an L2 */
-			
+
 			L1->blocks[L1_index][way].valid = 1 ;
 		    L1->blocks[L1_index][way].tag = L1_tag ;
 		    updateLRU(L1, L1_index, way);
@@ -123,14 +123,14 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, struct cache_t *otherL1
 		    if(access_type == 1) L1->blocks[L1_index][way].dirty = 1 ;
 
 			flag = 1;							/* an invalid entry is available*/
-			printf("\nfound an empty spot for addr %d", address);
+			//printf("\nfound an empty spot for addr %d", address);
 			break;
 		}
 	}
 
 	//Only execute if we couldn't find an open space
 	if (flag == 0) {
-    printf("\nevicting for address %d", address);
+    //printf("\nevicting for address %d", address);
 		max = L1->blocks[L1_index][0].LRU ;	/* find the LRU block */
 		way = 0 ;
 		for (i=1 ; i< L1->assoc ; i++) {
@@ -148,7 +148,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, struct cache_t *otherL1
 													/* should instead write to and/or read from L2, in case you have an L2 */
 		L1->blocks[L1_index][way].tag = L1_tag ;
 		updateLRU(L1, L1_index, way) ;
-		L1->blocks[L1_index][i].dirty = 0 ;			
+		L1->blocks[L1_index][i].dirty = 0 ;
 		if(access_type == 1) L1->blocks[L1_index][i].dirty = 1 ;
 	}
 
@@ -223,7 +223,7 @@ int cache_access(struct cache_t *L1, struct cache_t *L2, struct cache_t *otherL1
 													/* should instead write to and/or read from L2, in case you have an L2 */
 		L2->blocks[L2_index][way].tag = L2_tag ;
 		updateLRU(L2, L2_index, way) ;
-		L2->blocks[L2_index][i].dirty = 0 ;			
+		L2->blocks[L2_index][i].dirty = 0 ;
 		if(access_type == 1) L2->blocks[L2_index][i].dirty = 1 ;
 	}
 
