@@ -413,7 +413,7 @@ int main(int argc, char **argv)
 	*/
 
     if (trace_view_on) {/* print the executed instruction if trace_view_on=1	*/
-	  if(pipe_occupancy < 7)
+	  //if(pipe_occupancy < 7)
 		  //printf("pipe_occupancy: %d\n", pipe_occupancy);
 	  switch(pipeline[6]->type) {
 		case ti_NOP:
