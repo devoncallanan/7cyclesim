@@ -1,0 +1,5 @@
+There is no clear winner on the battle of the caches.  The ideal metric for the fastest user experience is the number of cycles, however, the first trace favors the 1MB 8-way cache, while the second trace favors the 512KB 4-way cache.  These two caches both outperformed the third option of a 512KB 8-way cache as it seems this one has the worst of both; a small size and a higher cycle penalty.  As to be expected as the size and associativity grow, the miss rate falls but at the expense of more cycles per access.  If forced to choose, I would pick the 1MB cache because it seems to offer the greatest gains and lowering the miss rate will help to take some load off of the memory hardware.
+
+  A note about the miss rates.  At first glance the rates seemed to be extraordinarily large, however I believe that this is in some way contributed to by the fact that the cache must first be filled before it can provide any useful data, and the process of filling will include almost 100% misses.  Then the hits form the L1 caches will also cut into the hits on L2 because you will only go to L2 if the data is less likely to be used.
+
+  
